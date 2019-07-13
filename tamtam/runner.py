@@ -36,8 +36,9 @@ def run_poller(
 
         assert dispatcher, "Dispatcher was never initialized"
 
-        for coro in coroutines:
-            loop.create_task(coro)
+        if coroutines:
+            for coro in coroutines:
+                loop.create_task(coro)
 
         loop.run_until_complete(
             dispatcher.idle(
