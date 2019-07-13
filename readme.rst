@@ -7,7 +7,7 @@ TamTam.py is about performance, so it requires ujson for serialization and deser
 
 ::
 
-    pip install https://github.com/uwinx/tamtam.py.git
+    pip install https://github.com/uwinx/tamtam.py/archive/master.zip
 
 
 **Settings Bot-Info:**

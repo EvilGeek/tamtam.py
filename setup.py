@@ -38,7 +38,7 @@ def get_requirements():
 setup(
     name="tamtampy",
     version=version,
-    packages=find_packages(exclude=("examples.*", "test.*", "docs", "test")),
+    packages=find_packages(exclude=("examples.*", "test.*", "docs", "test", "static")),
     url="https://github.com/uwinx/tamtam.py",
     license="MIT",
     author="Martin Winks",
