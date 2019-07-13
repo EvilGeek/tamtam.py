@@ -1,14 +1,20 @@
 from tamtam import Bot, Dispatcher, run_poller
-from tamtam.types.messages import Message
+from tamtam.types.updates import Message, BotStarted
+from tamtam.dispatcher.filters import MessageFilters
 
-bot = Bot("token")
+bot = Bot("put your token")
 disp = Dispatcher(bot)
 
 
-@disp.message_handler(commands=["start", "help"])
+@disp.bot_started()
+async def new_user(upd: BotStarted):
+    await upd.respond(f"Hiya, {upd.user.name}, how're your doing?! Send me /start first")
+
+
+@disp.message_handler(MessageFilters.commands("start", "help"))
 async def std_start(message: Message):
     await message.respond(
-        f"Hey there, {message.sender.name}! I'll show you any messages json"
+        f"{message.sender.name} send me anything"
     )
 
 

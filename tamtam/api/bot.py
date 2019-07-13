@@ -83,7 +83,7 @@ class Bot(ctx.ContextInstanceMixin):
         from_date: typing.Optional[datetime.datetime] = None,
         to_date: typing.Optional[datetime.datetime] = None,
         lim: int = None,
-    ) -> typing.List[messages.Message]:
+    ) -> typing.List[updates.Message]:
         """
 
         :param chat_id:
@@ -112,7 +112,7 @@ class Bot(ctx.ContextInstanceMixin):
 
     async def send_message(
         self, body: messages.NewMessage, *, chat_id: int = None, user_id: int = None
-    ) -> messages.Message:
+    ) -> updates.Message:
         """
 
         :param body:
@@ -124,7 +124,7 @@ class Bot(ctx.ContextInstanceMixin):
             self.urls.send_message,
             params={"chat_id": chat_id, "user_id": user_id},
             json=body.json(),
-            model=messages.Message,
+            model=updates.Message,
             model_from_key="message",
         )
 

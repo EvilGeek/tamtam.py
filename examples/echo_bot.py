@@ -1,12 +1,18 @@
 from tamtam import Bot, Dispatcher, run_poller
-from tamtam.types.messages import Message
+from tamtam.types.updates import Message, BotStarted
+from tamtam.dispatcher.filters import MessageFilters
 
 
-bot = Bot("put your token here")
+bot = Bot("put token")
 dp = Dispatcher(bot)
 
 
-@dp.message_handler(commands=["start"])
+@dp.bot_started()
+async def new_user(upd: BotStarted):
+    await upd.respond(f"Hello! {upd.user.name}.\nNice to see you!")
+
+
+@dp.message_handler(MessageFilters(commands=["start"]))
 async def cmd_start(message: Message):
     await message.reply(f"Hey there, {message.sender.name}! This is echo-bot.")
 

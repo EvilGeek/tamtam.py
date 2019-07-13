@@ -6,9 +6,9 @@ class Var:
     def __init__(self, value=None):
         self.value = value
 
-    def __set_name__(self, owner, name):
+    def __set_name__(self, owner, val):
         if not self.value:
-            self.value = name
+            self.value = val
 
     def __get__(self, instance, owner):
         return self.value

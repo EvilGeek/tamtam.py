@@ -33,7 +33,7 @@ class User(BaseModel):
     name: str
     """Users visible name"""
 
-    username: str
+    username: str = None
     """Unique public user name. Can be null if user is not accessible or it is not set"""
 
     avatar_url: str = None

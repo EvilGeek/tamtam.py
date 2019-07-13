@@ -1,40 +1,25 @@
 import asyncio
 import typing
 import logging
-import re
 
 from ..helpers.ctx import ContextInstanceMixin
-from ..types.updates import UpdatesEnum
+from ..types.updates import (
+    UpdatesEnum,
+    Update,
+    ChatAnyAction
+)
+
+from .event_manager import ChatEvent
+from .filters import MessageFilters
 
 
 logger = logging.getLogger(__name__)
 loop = asyncio.get_event_loop()
 
 
-# NOQA:
-def message_handler_fl_conf(
-    regexp: str, from_users: typing.List[int], commands: typing.List[str]
-):
-    # create adequate filters config
-    fl_stack = []
-
-    if regexp:
-        fl_stack.append(lambda update: re.compile(regexp).match(update.body.text))
-
-    if from_users:
-        fl_stack.append(lambda update: update.sender.user_id in from_users)
-
-    if commands:
-        fl_stack.append(
-            lambda update: update.body.text.startswith("/")
-            and update.body.text[1:] in commands
-        )
-
-    return fl_stack
-
-
 class Handler:
-    stack = []
+    def __init__(self):
+        self.stack = []
 
     def register(self, handler: typing.Callable, *filters):
         """
@@ -56,11 +41,9 @@ class Handler:
             for handler, filters in self.stack:
                 if filters:
                     if all(fl(update) for fl in filters):
-                        loop.create_task(handler(update))
-                        break
+                        return loop.create_task(handler(update))
                 else:
-                    loop.create_task(handler(update))
-                    break
+                    return loop.create_task(handler(update))
 
     @property
     def all(self) -> typing.List[str]:
@@ -78,18 +61,44 @@ class Dispatcher(ContextInstanceMixin):
 
         self.set_current(self)
 
-        # todo
-        self.message_handlers = Handler()
+        self.chat_actions_handlers = Handler()
 
-    async def process_events(self, events: list) -> typing.NoReturn:
+        self.__handlers = {
+            UpdatesEnum.message_created: Handler(),
+            UpdatesEnum.message_edited: Handler(),
+            UpdatesEnum.message_callback: Handler(),
+            UpdatesEnum.bot_added: Handler(),
+            UpdatesEnum.bot_removed: Handler(),
+            UpdatesEnum.chat_title_changed: Handler(),
+            UpdatesEnum.bot_started: Handler(),
+            UpdatesEnum.message_removed: Handler(),
+            UpdatesEnum.user_added: Handler(),
+            UpdatesEnum.user_removed: Handler(),
+            "CHAT_ACTION_ANY": Handler(),
+            "UNHANDLED": Handler(),
+            "RAW": Handler()
+        }
+
+        self.OnChatEvents = ChatEvent(self)
+
+    async def process_events(self, events: typing.List[Update]) -> typing.NoReturn:
         """
 
         :param events:
         :return:
         """
         for event in events:
-            if event.update_type == UpdatesEnum.message_created:
-                await self.message_handlers.notify(event.message)
+            model = event.make_update_model()
+
+            if not await self.__handlers[event.type].notify(model):
+
+                if isinstance(model, ChatAnyAction):
+                    await self.__handlers["CHAT_ACTION_ANY"].notify(model)
+
+                else:
+                    await self.__handlers["UNHANDLED"].notify(model)
+
+            await self.__handlers["RAW"].notify(model)
 
     async def idle(
         self,
@@ -126,48 +135,34 @@ class Dispatcher(ContextInstanceMixin):
 
             await asyncio.sleep(sleep_after_call)
 
-    def register_new_message_handler(
-        self,
-        handler,
-        *filters,
-        match: str = None,
-        from_users: typing.List[int] = None,
-        commands: typing.List[str] = None,
-    ):
-        """
+    def register_new_handler(self, handler, update_type, *filters):
+        fls = []
+        for fl in filters:
+            if isinstance(fl, MessageFilters):
+                for inner_fl in fl.stack:
+                    fls.append(inner_fl)
+            else:
+                fls.append(fl)
 
-        :param handler:
-        :param filters:
-        :param match:
-        :param from_users:
-        :param commands:
-        :return:
-        """
-        conf_filters = message_handler_fl_conf(
-            match, from_users, commands
-        )  # todo change
-        self.message_handlers.register(handler, *filters, *conf_filters)
+        self.__handlers[update_type].register(handler, *fls)
 
-    def message_handler(
-        self,
-        *filters,
-        match: str = None,
-        from_users: typing.List[int] = None,
-        commands: typing.List[str] = None,
-    ):
-        """
-
-        :param filters:
-        :param match:
-        :param from_users:
-        :param commands:
-        :return:
-        """
-
+    def message_handler(self, *filters):
         def decor(handler):
-            self.register_new_message_handler(
-                handler, *filters, match=match, from_users=from_users, commands=commands
-            )
+            self.register_new_handler(handler, UpdatesEnum.message_created, *filters)
+            return handler
+
+        return decor
+
+    def bot_started(self, *filters):
+        def decor(handler):
+            self.register_new_handler(handler, UpdatesEnum.bot_started, *filters)
+            return handler
+
+        return decor
+
+    def raw_handler(self):
+        def decor(handler):
+            self.register_new_handler(handler, "RAW")
             return handler
 
         return decor
