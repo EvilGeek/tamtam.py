@@ -44,10 +44,10 @@ Write fancy decorators
 
     run_poller()
 
+
 --------------------------------------
 Easily switch from polling to webhook
 --------------------------------------
-
 
 .. code::python
 
@@ -64,8 +64,9 @@ Easily switch from polling to webhook
     run_server()
 
 
-**If not configured:**
-
+-----------------------
+If not configured:
+-----------------------
 
 .. code::python
 
