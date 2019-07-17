@@ -49,7 +49,7 @@ Write fancy decorators
 Easily switch from polling to webhook
 --------------------------------------
 
-.. code::python
+.. code:: python
 
     from tamtam import Bot, Dispatcher, types
     from tamtam.runner import run_server, run_async
@@ -68,7 +68,7 @@ Easily switch from polling to webhook
 If not configured:
 -----------------------
 
-.. code::python
+.. code:: python
 
     async def sub(url):
         if not (await bot.subscribe(url))["success"]:
@@ -77,7 +77,7 @@ If not configured:
         ...
 
     url = "https://my.domain/path"  # or use yarl.URL.build
-    run_async(sub())
+    run_async(sub(url))
 
 
 -------------------------------------
