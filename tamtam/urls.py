@@ -29,3 +29,9 @@ class Urls:
 
     updates: URL = base.with_path("updates")
     """base_endpoint/updates"""
+
+    get_upload_url: URL = base.with_path("uploads")
+    """base_endpoint/uploads"""
+
+    subscriptions: URL = base.with_path("subscriptions")
+    """base_endpoint/subscriptions"""

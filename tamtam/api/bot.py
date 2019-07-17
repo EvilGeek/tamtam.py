@@ -3,17 +3,19 @@ import datetime
 
 import aiohttp
 
-from .requests import Requester
+from .requests import Requester, UrlType
 
 from ..urls import Urls
-from ..types import user, updates
-from ..types import chat, messages
+from ..types import user, updates, chat, messages, subscription
 from ..helpers import ctx
+
+
+TTPFType = typing.Tuple[bytes, str]  # (file, file_type)
 
 
 class Bot(ctx.ContextInstanceMixin):
     def __init__(
-        self, token: str, timeout: int = 60, _session: aiohttp.ClientSession = None
+            self, token: str, timeout: int = 60, _session: aiohttp.ClientSession = None
     ):
         """
 
@@ -77,12 +79,12 @@ class Bot(ctx.ContextInstanceMixin):
 
     # messages
     async def get_messages(
-        self,
-        chat_id: int = None,
-        messages_ids: typing.Optional[typing.List[int]] = None,
-        from_date: typing.Optional[datetime.datetime] = None,
-        to_date: typing.Optional[datetime.datetime] = None,
-        lim: int = None,
+            self,
+            chat_id: int = None,
+            messages_ids: typing.Optional[typing.List[int]] = None,
+            from_date: typing.Optional[datetime.datetime] = None,
+            to_date: typing.Optional[datetime.datetime] = None,
+            lim: int = None,
     ) -> typing.List[updates.Message]:
         """
 
@@ -111,7 +113,7 @@ class Bot(ctx.ContextInstanceMixin):
         )
 
     async def send_message(
-        self, body: messages.NewMessage, *, chat_id: int = None, user_id: int = None
+            self, body: messages.NewMessage, *, chat_id: int = None, user_id: int = None
     ) -> updates.Message:
         """
 
@@ -129,7 +131,7 @@ class Bot(ctx.ContextInstanceMixin):
         )
 
     async def get_updates(
-        self, lim: int, timeout: int, marker: int, update_types: typing.Optional[str]
+            self, lim: int, timeout: int, marker: int, update_types: typing.Optional[str]
     ) -> typing.Tuple[typing.List[updates.Update], int]:
         """
 
@@ -152,6 +154,41 @@ class Bot(ctx.ContextInstanceMixin):
             model=updates.Update,
             extra_key="marker",
         )
+
+    async def subscriptions(self) -> typing.List[subscription.Subscription]:
+        tt_url = self.urls.subscriptions
+        return await self.request.get(
+            tt_url,
+            model_from_key="subscriptions",
+            models_in_list=True,
+            model=subscription.Subscription,
+        )
+
+    async def subscribe(self, config: subscription.NewSubscriptionConfig):
+        tt_url = self.urls.subscriptions
+        return await self.request.post(tt_url, json=config.json())
+
+    async def unsubscribe(self, url: UrlType):
+        tt_url = self.urls.subscriptions
+        return await self.request("DELETE", url=tt_url, params={"url": str(url)})
+
+    async def make_attachments(
+        self, files: typing.Union[typing.List[TTPFType], TTPFType, UrlType],
+    ) -> typing.List[int]:
+        # todo make user-friendly files uploading [!will behave very slow!]
+        files = files if isinstance(files, list) else [files]
+
+        attachments = []
+        url_attachments = list(filter(lambda nt: isinstance(nt, str), files))
+        file_like_objects = filter(lambda nt: isinstance(nt, tuple), files)
+
+        for file, file_type in file_like_objects:
+            attachments.append(await self.request.make_file_token(
+                self.urls.get_upload_url, file, file_type
+            ))
+
+        attachments.extend(url_attachments)
+        return attachments
 
     async def __aenter__(self) -> "Bot":
         return self

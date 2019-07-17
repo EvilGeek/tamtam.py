@@ -8,6 +8,15 @@ from . import Dispatcher
 loop = asyncio.get_event_loop()
 
 
+def run_async(*coroutines, tasks=False):
+    if coroutines:
+        for coro in coroutines:
+            if tasks:
+                loop.create_task(coro)
+            else:
+                loop.run_until_complete(coro)
+
+
 def run_poller(
     *coroutines,
     lim: int = 100,
@@ -36,12 +45,10 @@ def run_poller(
 
         assert dispatcher, "Dispatcher was never initialized"
 
-        if coroutines:
-            for coro in coroutines:
-                loop.create_task(coro)
+        run_async(coroutines, tasks=True)
 
         loop.run_until_complete(
-            dispatcher.idle(
+            dispatcher.poll(
                 lim=lim,
                 marker=marker,
                 timeout=timeout,
@@ -49,12 +56,26 @@ def run_poller(
                 sleep_after_call=sleep_after_call,
             )
         )
+
     except exit_on_exc:
         if on_exc_callback:
             on_exc_callback()
 
-        exit(1)
+        loop.close()  # exit case
 
     except (client_exceptions.ClientError,):
-        loop.close()
-        exit(0)
+        loop.close()  # exit case
+
+
+def run_server(
+    *coroutines,
+    host: str = None,
+    port: int = None,
+    path: str = None,
+    app=None,
+):
+    if coroutines:
+        run_async(coroutines)
+
+    dispatcher = Dispatcher.current()
+    dispatcher.listen(host=host, port=port, path=path, app=app)

@@ -3,6 +3,7 @@ import typing
 import logging
 
 from ..helpers.ctx import ContextInstanceMixin
+from ..helpers.vars import Var
 from ..types.updates import (
     UpdatesEnum,
     Update,
@@ -11,10 +12,15 @@ from ..types.updates import (
 
 from .event_manager import ChatEvent
 from .filters import MessageFilters
-
+from .server import run_app
 
 logger = logging.getLogger(__name__)
 loop = asyncio.get_event_loop()
+
+# some handler-types
+RAW = Var()
+UNHANDLED = Var()
+CHAT_ANY_ACTION = Var()
 
 
 class Handler:
@@ -57,7 +63,6 @@ class Dispatcher(ContextInstanceMixin):
         :param bot:
         """
         self.bot = bot
-        self.__polling = True
 
         self.set_current(self)
 
@@ -74,12 +79,16 @@ class Dispatcher(ContextInstanceMixin):
             UpdatesEnum.message_removed: Handler(),
             UpdatesEnum.user_added: Handler(),
             UpdatesEnum.user_removed: Handler(),
-            "CHAT_ACTION_ANY": Handler(),
-            "UNHANDLED": Handler(),
-            "RAW": Handler()
+            CHAT_ANY_ACTION: Handler(),
+            UNHANDLED: Handler(),
+            RAW: Handler()
         }
 
-        self.OnChatEvents = ChatEvent(self)
+        self.OnChatEvent = ChatEvent(self)
+
+        self.bot_polling = True
+        self.use_polling = self.bot_polling
+        self.use_webhook = not self.bot_polling
 
     async def process_events(self, events: typing.List[Update]) -> typing.NoReturn:
         """
@@ -93,14 +102,14 @@ class Dispatcher(ContextInstanceMixin):
             if not await self.__handlers[event.type].notify(model):
 
                 if isinstance(model, ChatAnyAction):
-                    await self.__handlers["CHAT_ACTION_ANY"].notify(model)
+                    await self.__handlers[CHAT_ANY_ACTION].notify(model)
 
                 else:
-                    await self.__handlers["UNHANDLED"].notify(model)
+                    await self.__handlers[UNHANDLED].notify(model)
 
-            await self.__handlers["RAW"].notify(model)
+            await self.__handlers[RAW].notify(event)
 
-    async def idle(
+    async def poll(
         self,
         lim: int = 100,
         timeout: int = 30,
@@ -119,7 +128,8 @@ class Dispatcher(ContextInstanceMixin):
         :param sleep_after_call:
         :return:
         """
-        while self.__polling:
+
+        while self.use_polling:
             try:
                 events, marker = await self.bot.get_updates(
                     lim, timeout, marker, update_types
@@ -134,6 +144,24 @@ class Dispatcher(ContextInstanceMixin):
                 loop.create_task(self.process_events(events))
 
             await asyncio.sleep(sleep_after_call)
+
+    def listen(self, *, host: str = None, port: int = None, path: str = None, app=None):
+        """
+        Listen hooks from TT
+        :param host:
+        :param port:
+        :param path:
+        :param app:
+        :return:
+        """
+
+        run_app(
+            dispatcher=self,
+            host=host,
+            path=path,
+            port=port,
+            app=app,
+        )
 
     def register_new_handler(self, handler, update_type, *filters):
         fls = []
@@ -162,7 +190,7 @@ class Dispatcher(ContextInstanceMixin):
 
     def raw_handler(self):
         def decor(handler):
-            self.register_new_handler(handler, "RAW")
+            self.register_new_handler(handler, RAW)
             return handler
 
         return decor

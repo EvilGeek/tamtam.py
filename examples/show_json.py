@@ -1,5 +1,5 @@
 from tamtam import Bot, Dispatcher, run_poller
-from tamtam.types.updates import Message, BotStarted
+from tamtam.types import Message, BotStarted
 from tamtam.dispatcher.filters import MessageFilters
 
 bot = Bot("put your token")
