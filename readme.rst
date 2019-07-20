@@ -36,6 +36,23 @@
 
     run_async(func())
 
+------------------------------
+❓ Polling TamTam for updates
+------------------------------
+
+.. code:: python
+
+    from tamtam import Bot, Dispatcher, types, run_poller
+
+    bot = Bot("put token @PrimeBot gave")
+    dp = Dispatcher(bot)
+
+    @dp.message_handler()
+    async def msg_handler(msg: types.Message):
+        await msg.reply("Hello!")
+
+    run_poller(func())
+
 
 --------------------------------
 ☂️ Write fancy decorators
@@ -43,16 +60,9 @@
 
 .. code:: python
 
-    from tamtam import Dispatcher, Bot, run_poller, types
-
-    dp = Dispatcher(Bot('token'))
-
     @dp.bot_started()
     async def start_handler(upd: types.BotStarted):
         await upd.respond("you started bot")
-
-    run_poller()
-
 
 ---------------------------------------------------
 👟 ⇒ 👞 Easily switch from polling to webhook
@@ -70,7 +80,6 @@
         await upd.respond("Sup!")
 
     run_server()
-
 
 -----------------------
 If not configured:
@@ -97,11 +106,6 @@ Easy function based message filters
 
 .. code:: python
 
-    from tamtam import Dispatcher, Bot, run_poller, types
-    from tamtam.dispatcher.filters import MessageFilters
-
-    dp = Dispatcher(Bot('token'))
-
     @dp.message_handler(MessageFilters.match(r"^.ban \d$"))
     async def ban_user_handler(message: types.Message):
         ...
@@ -122,7 +126,7 @@ Some advices from author
 =========================
 
 - Don't use webhooks. tamtam.py provides fantastically easy-to-use webhooks with no additional headaches, but also provides polling. You can use webhooks if you have special-cases. Cases like when you want to server multiple bots and etc. But for single bot(even high-loaded) you can use polling
-- Avoid using low-level methods. If you are not super-smart and care consequences DO NOT use low-level methods. tamtam.py provides pretty enough user-friendly functions
+- Avoid using low-level methods. If you are not super-smart and care about consequences DO NOT use low-level methods. tamtam.py provides pretty enough user-friendly functions
 - Don't use shitty libraries written with no love
 - async/await syntax is easy. Asynchronous python won't bite you(if you code correctly)
 
