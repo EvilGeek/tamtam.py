@@ -42,7 +42,9 @@ class ChatEvent:
 
     def title_changed(self, *filters):
         def decor(handler):
-            self.dp.register_new_handler(handler, UpdatesEnum.chat_title_changed, *filters)
+            self.dp.register_new_handler(
+                handler, UpdatesEnum.chat_title_changed, *filters
+            )
             return handler
 
         return decor

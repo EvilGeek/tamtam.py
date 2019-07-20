@@ -72,11 +72,11 @@ class Message(BaseModel):
     """todo"""
 
     async def respond(
-            self,
-            text: str,
-            attachments: list = None,
-            link: NewMessageLink = None,
-            to: int = None,
+        self,
+        text: str,
+        attachments: list = None,
+        link: NewMessageLink = None,
+        to: int = None,
     ) -> "Message":
         """
 
@@ -109,7 +109,7 @@ class Message(BaseModel):
         return await self.respond(text, attachments, link)
 
     async def forward(
-            self, to: int, comment: str = None, attachments: list = None
+        self, to: int, comment: str = None, attachments: list = None
     ) -> "Message":
         """
         Forward Message of peer to another peer
@@ -180,14 +180,17 @@ class ChatAnyAction(BaseModel):
     admin_id: int = None
     title: int = None
 
-    async def respond(self, text: str, attachments: list = None, link: NewMessageLink = None):
+    async def respond(
+        self, text: str, attachments: list = None, link: NewMessageLink = None
+    ):
 
         bot_ = bot.Bot.current()
         assert bot_, "Bot was never initialized"
 
         return await bot_.send_message(
             NewMessage(text=text, attachments=attachments or [], link=link),
-            chat_id=self.chat_id, user_id=self.user.id,
+            chat_id=self.chat_id,
+            user_id=self.user.id,
         )
 
 
@@ -230,7 +233,6 @@ class Update:
         UpdatesEnum.message_removed: MessageRemoved,
         UpdatesEnum.user_added: UserAdded,
         UpdatesEnum.user_removed: UserRemoved,
-
     }
 
     def __init__(self, update_type: str, timestamp: int, **body):
@@ -246,4 +248,6 @@ class Update:
                 return model.original
             return model
 
-        raise NotImplemented(f"update_type={self.type!s} is not implemented in tamtam.py")
+        raise NotImplemented(
+            f"update_type={self.type!s} is not implemented in tamtam.py"
+        )

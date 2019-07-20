@@ -31,32 +31,27 @@ def params_filter(dictionary: dict):
 
 
 class Requester(ContextInstanceMixin):
-    UPL_SEQUENCE_KEYS = {
-        1: "url",
-        2: "id"
-    }
-
     def __init__(self, session: aiohttp.ClientSession, default_params: dict = None):
         self._session = session
         self.params = params_filter(default_params or {})
 
     async def __call__(
-            self,
-            http_method: str,
-            url: UrlType,
-            *,
-            params: dict = None,
-            json: str = None,
-            model=None,
-            models_in_list: bool = None,
-            model_from_key: str = None,
-            extra_key: str = None,
+        self,
+        http_method: str,
+        url: UrlType,
+        *,
+        params: dict = None,
+        json: str = None,
+        model=None,
+        models_in_list: bool = None,
+        model_from_key: str = None,
+        extra_key: str = None,
     ):
         async with self._session.request(
-                http_method,
-                url.__str__(),
-                params={**self.params, **params_filter(params)},
-                data=json,
+            http_method,
+            url.__str__(),
+            params={**self.params, **params_filter(params)},
+            data=json,
         ) as response:
 
             try:

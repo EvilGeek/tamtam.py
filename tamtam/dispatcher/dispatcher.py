@@ -1,14 +1,12 @@
 import asyncio
 import typing
 import logging
+import inspect
 
 from ..helpers.ctx import ContextInstanceMixin
 from ..helpers.vars import Var
-from ..types.updates import (
-    UpdatesEnum,
-    Update,
-    ChatAnyAction
-)
+from ..types.updates import UpdatesEnum, Update, ChatAnyAction
+from ..api.bot import Bot
 
 from .event_manager import ChatEvent
 from .filters import MessageFilters
@@ -27,14 +25,22 @@ class Handler:
     def __init__(self):
         self.stack = []
 
-    def register(self, handler: typing.Callable, *filters):
+    def register(self, handler: typing.Callable[[Update], typing.NoReturn], *filters):
         """
+        Filters should return positive value
+        :param handler: async function
+        :param filters: callable async or sync functions
+        """
+        async_filters = []
+        sync_filters = []
 
-        :param handler:
-        :param filters:
-        :return:
-        """
-        self.stack.append((handler, filters))
+        for fl in filters:
+            if inspect.iscoroutinefunction(fl):
+                async_filters.append(fl)
+            else:
+                sync_filters.append(fl)
+
+        self.stack.append((handler, sync_filters, async_filters))
 
     async def notify(self, update):
         """
@@ -44,8 +50,16 @@ class Handler:
         """
 
         if self.stack:
-            for handler, filters in self.stack:
-                if filters:
+            for handler, filters, coro_filters in self.stack:
+                if coro_filters and filters:
+                    if all(await cfl(update) for cfl in coro_filters) and all(
+                        fl(update) for fl in filters
+                    ):
+                        return loop.create_task(handler(update))
+                elif coro_filters:
+                    if all(await cfl(update) for cfl in coro_filters):
+                        return loop.create_task(handler(update))
+                elif filters:
                     if all(fl(update) for fl in filters):
                         return loop.create_task(handler(update))
                 else:
@@ -57,12 +71,12 @@ class Handler:
 
 
 class Dispatcher(ContextInstanceMixin):
-    def __init__(self, bot):
+    def __init__(self, bot: Bot = None):
         """
-
-        :param bot:
+        Dispatcher class
+        :param bot: ..api.bot::Bot
         """
-        self.bot = bot
+        self.bot = bot or Bot.current(no_error=False)
 
         self.set_current(self)
 
@@ -81,7 +95,7 @@ class Dispatcher(ContextInstanceMixin):
             UpdatesEnum.user_removed: Handler(),
             CHAT_ANY_ACTION: Handler(),
             UNHANDLED: Handler(),
-            RAW: Handler()
+            RAW: Handler(),
         }
 
         self.OnChatEvent = ChatEvent(self)
@@ -89,6 +103,10 @@ class Dispatcher(ContextInstanceMixin):
         self.bot_polling = True
         self.use_polling = self.bot_polling
         self.use_webhook = not self.bot_polling
+
+    @property
+    def registered_handlers(self) -> typing.List[typing.List[str]]:
+        return [handler.all for handler in self.__handlers]
 
     async def process_events(self, events: typing.List[Update]) -> typing.NoReturn:
         """
@@ -117,6 +135,7 @@ class Dispatcher(ContextInstanceMixin):
         update_types: typing.Optional[str] = None,
         sleep_on_exc: float = 3.3,
         sleep_after_call: float = 0.01,
+        skip_updates: bool = False,
     ):
         """
 
@@ -126,13 +145,14 @@ class Dispatcher(ContextInstanceMixin):
         :param update_types:
         :param sleep_on_exc:
         :param sleep_after_call:
+        :param: skip_updates: Skip pending updates
         :return:
         """
 
         while self.use_polling:
             try:
                 events, marker = await self.bot.get_updates(
-                    lim, timeout, marker, update_types
+                    lim, timeout, marker, update_types, skip_updates
                 )
             except:  # noqa
                 logger.exception("Error while getting new events")
@@ -147,21 +167,14 @@ class Dispatcher(ContextInstanceMixin):
 
     def listen(self, *, host: str = None, port: int = None, path: str = None, app=None):
         """
-        Listen hooks from TT
-        :param host:
-        :param port:
-        :param path:
-        :param app:
+        Listen to hooks from TT
+        :param host: your host
+        :param port: your port
+        :param path: your path
+        :param app: app[Optional]
         :return:
         """
-
-        run_app(
-            dispatcher=self,
-            host=host,
-            path=path,
-            port=port,
-            app=app,
-        )
+        run_app(dispatcher=self, host=host, path=path, port=port, app=app)
 
     def register_new_handler(self, handler, update_type, *filters):
         fls = []
@@ -169,7 +182,7 @@ class Dispatcher(ContextInstanceMixin):
             if isinstance(fl, MessageFilters):
                 for inner_fl in fl.stack:
                     fls.append(inner_fl)
-            else:
+            elif isinstance(fl, typing.Callable):
                 fls.append(fl)
 
         self.__handlers[update_type].register(handler, *fls)
@@ -194,3 +207,6 @@ class Dispatcher(ContextInstanceMixin):
             return handler
 
         return decor
+
+
+__all__ = ["Dispatcher"]

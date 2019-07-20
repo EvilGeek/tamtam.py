@@ -14,7 +14,7 @@ def run_async(*coroutines, tasks=False):
             if tasks:
                 loop.create_task(coro)
             else:
-                loop.run_until_complete(coro)
+                yield loop.run_until_complete(coro)
 
 
 def run_poller(
@@ -25,12 +25,12 @@ def run_poller(
     update_types: typing.Optional[str] = None,
     exit_on_exc: typing.Sequence = (KeyboardInterrupt,),
     on_exc_callback: typing.Callable[..., typing.NoReturn] = lambda: print("Bye :*"),
-    sleep_after_call: typing.Union[float, int] = 0.1
+    sleep_after_call: typing.Union[float, int] = 0.1,
 ):
     """
     Function to idle dispatcher synchronously in event loop [This is blocking function]
 
-        *coroutines - Pass cooroutines you want run and FORGET(!) BEFORE idling starts
+        *coroutines - Pass coroutines you want run and FORGET(!) BEFORE idling starts
 
     :param lim int [1..1000] default is 100 Maximum number of updates to be retrieved
     :param timeout int [0..90] default is 30 Timeout in seconds for long polling
@@ -38,7 +38,7 @@ def run_poller(
     :param update_types str array of joint string update types example "types=message_created,message_callback"
     :param exit_on_exc Exception
     :param on_exc_callback on_app_close primitive sync callback
-    :param sleep_after_call
+    :param sleep_after_call sleep seconds after each call
     """
     try:
         dispatcher = Dispatcher.current()
@@ -67,15 +67,10 @@ def run_poller(
         loop.close()  # exit case
 
 
-def run_server(
-    *coroutines,
-    host: str = None,
-    port: int = None,
-    path: str = None,
-    app=None,
-):
-    if coroutines:
-        run_async(coroutines)
+def run_server(*coroutines, host: str, port: int, path: str, app=None):
+    run_async(coroutines, tasks=True)
 
     dispatcher = Dispatcher.current()
+    assert dispatcher, "Dispatcher was never initialized"
+
     dispatcher.listen(host=host, port=port, path=path, app=app)
