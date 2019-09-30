@@ -136,7 +136,7 @@ class Callback(BaseModel):
     timestamp: int
     """unix-time when event occurred"""
 
-    callback_id: str
+    callback_id: int
     """current keyboard identifier"""
 
     payload: str = None
