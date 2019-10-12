@@ -20,12 +20,21 @@ class Urls:
         str(self.get_chats) + str(chat_id) + "/"
     )
     """base_endpoint/chats/chat_id/"""
+    send_action: typing.Callable[["Urls", int], URL] = lambda self, chat_id: URL(
+        self.get_chat(chat_id) + "actions"
+    )
+    membership: typing.Callable[["Urls", int], URL] = lambda self, chat_id, who: URL(
+        self.get_chat(chat_id) + "members" + ("/" + str(who) if who else None)
+    )
 
-    get_messages: URL = base.with_path("messages")
+    messages: URL = base.with_path("messages")
     """base_endpoint/messages"""
 
-    send_message: URL = get_messages
+    send_message: URL = messages
     """base_endpoint/messages"""
+
+    answers: URL = base.with_path("answers")
+    """base_endpoint/answers"""
 
     updates: URL = base.with_path("updates")
     """base_endpoint/updates"""

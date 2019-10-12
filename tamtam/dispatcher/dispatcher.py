@@ -49,21 +49,20 @@ class Handler:
         :return:
         """
 
-        if self.stack:
-            for handler, filters, coro_filters in self.stack:
-                if coro_filters and filters:
-                    if all(await cfl(update) for cfl in coro_filters) and all(
-                        fl(update) for fl in filters
-                    ):
-                        return loop.create_task(handler(update))
-                elif coro_filters:
-                    if all(await cfl(update) for cfl in coro_filters):
-                        return loop.create_task(handler(update))
-                elif filters:
-                    if all(fl(update) for fl in filters):
-                        return loop.create_task(handler(update))
-                else:
+        for handler, filters, coro_filters in self.stack or ():
+            if coro_filters and filters:
+                if all(await cfl(update) for cfl in coro_filters) and all(
+                    fl(update) for fl in filters
+                ):
                     return loop.create_task(handler(update))
+            elif coro_filters:
+                if all(await cfl(update) for cfl in coro_filters):
+                    return loop.create_task(handler(update))
+            elif filters:
+                if all(fl(update) for fl in filters):
+                    return loop.create_task(handler(update))
+            else:
+                return loop.create_task(handler(update))
 
     @property
     def all(self) -> typing.List[str]:
@@ -145,7 +144,7 @@ class Dispatcher(ContextInstanceMixin):
         :param update_types:
         :param sleep_on_exc:
         :param sleep_after_call:
-        :param: skip_updates: Skip pending updates
+        :param skip_updates: Skip pending updates
         :return:
         """
 

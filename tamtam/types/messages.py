@@ -1,8 +1,30 @@
 """This file contains message-related models"""
+import typing
+
 from pydantic import BaseModel
 
 from .messages_enums import LinkTypes
 from .chat import ChatType
+from .attachments import (
+    VideoAttachment,
+    AudioAttachment,
+    FileAttachment,
+    ImageAttachment,
+    InlineKeyboardAttachment,
+    LocationAttachment,
+    StickerAttachment
+)
+
+
+AnyAttachment = typing.Union[
+    VideoAttachment,
+    AudioAttachment,
+    FileAttachment,
+    ImageAttachment,
+    InlineKeyboardAttachment,
+    LocationAttachment,
+    StickerAttachment,
+]
 
 
 class Sender(BaseModel):
@@ -37,7 +59,7 @@ class MessageItself(BaseModel):
     text: str = None
     """todo"""
 
-    attachments: list = []
+    attachments: AnyAttachment = []
     """todo"""
 
 
@@ -64,6 +86,12 @@ class NewMessageLink(BaseModel):
 
 
 class NewMessage(BaseModel):
+    def __init__(
+        self, text: str, attachments: list, link: NewMessageLink, notify: bool = False
+    ):
+        super().__init__(**locals())
+    """purpose of adding __init__ - make pycharm more helpful"""
+
     text: str = None
     """todo"""
 
@@ -80,3 +108,21 @@ class NewMessage(BaseModel):
 class Stats(BaseModel):
     views: int
     """todo"""
+
+
+class EditMessageConfig(BaseModel):
+    chat_id: int = None
+    """..."""
+
+    message_ids: typing.List[int] = None
+    """..."""
+
+    from_: int = None
+    """..."""
+
+    to: int = None
+    """..."""
+
+    count: int = None
+    """..."""
+

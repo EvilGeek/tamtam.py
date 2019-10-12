@@ -2,6 +2,7 @@ import typing
 
 from pydantic import BaseModel
 
+from .user import User
 from .chat_enums import ChatStatus, ChatType
 
 
@@ -49,6 +50,9 @@ class Chat(BaseModel):
     description: str = None
     """Chat description"""
 
+    dialog_with_user: User = None
+    """todo"""
+
 
 class Chats(BaseModel):
     chats: typing.List[Chat]
@@ -56,3 +60,45 @@ class Chats(BaseModel):
 
     marker: int = None
     """Reference to the next page of requested chats"""
+
+
+class IconSetter(BaseModel):
+    url: str = None
+    token: str = None
+    photos: typing.Dict[str, typing.Dict[str, str]] = None
+
+
+class EditChatInfo(BaseModel):
+    title: str
+    icon: Icon
+
+
+class Membership(User):
+    last_access_time: int
+    """..."""
+
+    is_owner: bool
+    """..."""
+
+    is_admin: bool
+    """..."""
+
+    join_time: int
+    """..."""
+
+    permissions: typing.Union[typing.List[str], type(None)]
+    """Items Enum:"read_all_messages" "add_remove_members" "add_admins" "change_chat_info" "pin_message" "write"
+       Permissions in chat if member is admin. null otherwise"""
+
+
+class Members(BaseModel):
+    members: typing.List[Membership]
+    """..."""
+
+    marker: int
+    """..."""
+
+
+# for convenience
+class Admins(Members):
+    ...

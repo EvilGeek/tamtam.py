@@ -21,7 +21,7 @@
 **ℹ️ Setting bot-info:**
 
 
-.. code:: python
+.. code-block:: python
 
     from tamtam import Bot, types, run_async
 
@@ -40,7 +40,7 @@
 ❓ Polling TamTam for updates
 ------------------------------
 
-.. code:: python
+.. code-block:: python
 
     from tamtam import Bot, Dispatcher, types, run_poller
 
@@ -58,7 +58,7 @@
 ☂️ Write fancy decorators
 --------------------------------
 
-.. code:: python
+.. code-block:: python
 
     @dp.bot_started()
     async def start_handler(upd: types.BotStarted):
@@ -68,7 +68,7 @@
 👟 ⇒ 👞 Easily switch from polling to webhook
 ---------------------------------------------------
 
-.. code:: python
+.. code-block:: python
 
     from tamtam import Bot, Dispatcher, types, run_sever
 
@@ -85,7 +85,7 @@
 If not configured:
 -----------------------
 
-.. code:: python
+.. code-block:: python
 
     # better example in repo/examples/
     async def sub(url):
@@ -104,12 +104,35 @@ If not configured:
 Easy function based message filters
 -------------------------------------
 
-.. code:: python
+.. code-block:: python
 
     @dp.message_handler(MessageFilters.match(r"^.ban \d$"))
     async def ban_user_handler(message: types.Message):
         ...
 
+
+============
+Buttons
+============
+
+You can use `tamtam.types.attachments::InlineKeyboardAttachment`, but ... I find it quite inconvenient to utilize and, that's why we have `tamtam.types.attachments::ButtonsArray`
+Think of `ButtonsArray` as an abstraction from `list[list[button]]`.
+
+
+.. code-block:: python
+
+    from tamtam.types import
+
+    # create instance of ButtonsArray
+    array = ButtonsArray()
+    row, index = array.add_row(1)  # pass None for dynamic row
+    row.add(CallbackButton("text", "payload", "negative"))
+    row2, index2 = array.add_row(1)
+    # well, heck I don't actually need second row
+    array.delete_row(index2)
+
+    # further actions, e.g send message
+    attachments = (InlineKeyboardAttachment.from_array(array), )
 
 =======================
 Bots using tamtam.py
@@ -121,6 +144,8 @@ Bots using tamtam.py
 See `examples
 <https://github.com/uwinx/tamtam.py/tree/master/examples>`_ for more.
 
+If your bot using tamtam.py, let me know!
+
 =========================
 Some advices from author
 =========================
@@ -129,11 +154,3 @@ Some advices from author
 - Avoid using low-level methods. If you are not super-smart and care about consequences DO NOT use low-level methods. tamtam.py provides pretty enough user-friendly functions
 - Don't use shitty libraries written with no love
 - async/await syntax is easy. Asynchronous python won't bite you(if you code correctly)
-
-
-==============
-TODOs #help
-==============
-
-- Chats methods
-- Easy creation of a message-attachment

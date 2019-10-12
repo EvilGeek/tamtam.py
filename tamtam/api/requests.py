@@ -3,7 +3,7 @@ import logging
 
 import aiohttp
 import pydantic
-from yarl import URL
+from yarl import URL, Query
 
 from .exceptions import JsonParsingError, BaseWrapperError
 from ..helpers.ctx import ContextInstanceMixin
@@ -17,7 +17,7 @@ def is_error(response_json: dict):
     return all(k in response_json for k in ("code", "message"))
 
 
-def params_filter(dictionary: dict):
+def params_filter(dictionary: Query):
     """
     Pop NoneType values and convert everything to str, designed?for=params
     :param dictionary: source dict
@@ -40,18 +40,23 @@ class Requester(ContextInstanceMixin):
         http_method: str,
         url: UrlType,
         *,
-        params: dict = None,
+        params: Query = None,
         json: str = None,
         model=None,
         models_in_list: bool = None,
         model_from_key: str = None,
         extra_key: str = None,
+        **aiohttp_request_kwargs
     ):
+        if "data" in aiohttp_request_kwargs:
+            json = aiohttp_request_kwargs.pop("data")
+
         async with self._session.request(
             http_method,
             url.__str__(),
             params={**self.params, **params_filter(params)},
             data=json,
+            **aiohttp_request_kwargs,
         ) as response:
 
             try:
@@ -99,9 +104,6 @@ class Requester(ContextInstanceMixin):
 
     async def post(self, url: UrlType, params: dict = None, json: str = None, **kwargs):
         return await self("POST", url, params=params, json=json, **kwargs)
-
-    async def make_file_token(self, *args, **kwargs):
-        raise NotImplemented()
 
     async def close(self):
         await self._session.close()

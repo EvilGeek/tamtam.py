@@ -1,3 +1,18 @@
+"""
+API EXCEPTIONS
+
+    https://dev.tamtam.chat/#section/About/HTTP-response-codes
+
+200 — successful operation
+400 — invalid request
+401 — authentication error
+404 — resource not found
+405 — method is not allowed
+429 — the number of requests is exceeded
+503 — service unavailable
+"""
+
+
 class BaseWrapperError(Exception):
     """
     Base API-Wrapper exception, use to handle all tamtam.py requests related stuff
