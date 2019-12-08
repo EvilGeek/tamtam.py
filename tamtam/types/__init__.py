@@ -15,3 +15,17 @@ from .updates import (
     ChatTitleChanged,
 )
 from .subscription import NewSubscriptionConfig
+from .attachments import (
+    VideoAttachment,
+    AudioAttachment,
+    FileAttachment,
+    ImageAttachment,
+    InlineKeyboardAttachment,
+    LocationAttachment,
+    StickerAttachment,
+    ButtonsArray,
+    CallbackButton,
+    LinkButton,
+    RequestContactButton,
+    RequestLocationButton,
+)

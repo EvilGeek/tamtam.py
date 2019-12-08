@@ -66,6 +66,6 @@ class BotInfoSetter(BaseModel):
     photo: str = None
     """todo"""
 
-    async def call(self):
+    async def set(self):
         bot_ = bot.Bot.current(False)
         return await bot_.set_me(self)

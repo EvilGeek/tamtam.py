@@ -71,12 +71,15 @@ class Message(BaseModel):
     stat: Stats = None
     """todo"""
 
+    url: str
+
     async def respond(
         self,
         text: str,
         attachments: list = None,
         link: NewMessageLink = None,
         to: int = None,
+        notify: bool = False,
     ) -> "Message":
         """
 
@@ -84,6 +87,7 @@ class Message(BaseModel):
         :param attachments: list of attachments
         :param link: NewMessageLink
         :param to: receiver
+        :param notify:
         :return: Message
         """
 
@@ -91,22 +95,23 @@ class Message(BaseModel):
         assert bot_, "Bot was never initialized"
 
         return await bot_.send_message(
-            NewMessage(text=text, attachments=attachments or [], link=link),
+            NewMessage(text=text, attachments=attachments or [], link=link, notify=notify),
             user_id=to or self.sender.user_id,
             chat_id=self.recipient.chat_id,
         )
 
-    async def reply(self, text: str, attachments: list = None) -> "Message":
+    async def reply(self, text: str, attachments: list = None, notify: bool = False) -> "Message":
         """
         Reply to peer
         :param text: text of message
         :param attachments: list of attachments
+        :param notify:
         :return: Message object
         """
 
         link = NewMessageLink(type=LinkTypes.reply.value, mid=self.body.mid)
 
-        return await self.respond(text, attachments, link)
+        return await self.respond(text, attachments, link, notify=notify)
 
     async def forward(
         self, to: int, comment: str = None, attachments: list = None
@@ -123,6 +128,12 @@ class Message(BaseModel):
 
         return await self.respond(comment, attachments, link, to)
 
+    async def delete(self):
+        bot_ = bot.Bot.current()
+        assert bot_, "Bot was never initialized"
+
+        return await bot_.delete_message(self.body.mid)
+
 
 class _MsgUpdate(BaseModel):
     message: Message
@@ -136,7 +147,7 @@ class Callback(BaseModel):
     timestamp: int
     """unix-time when event occurred"""
 
-    callback_id: int
+    callback_id: str
     """current keyboard identifier"""
 
     payload: str = None
@@ -147,6 +158,14 @@ class Callback(BaseModel):
 
     message: Message = None
     """original message containing inline keyboard"""
+
+    async def answer(self, notification: str):
+        bot_ = bot.Bot.current()
+        assert bot_, "Bot was never initialized"
+
+        await bot_.answer_callback_query(
+            self.callback_id, notification=notification
+        )
 
 
 class MessageRemoved(BaseModel):
@@ -190,7 +209,7 @@ class ChatAnyAction(BaseModel):
         return await bot_.send_message(
             NewMessage(text=text, attachments=attachments or [], link=link),
             chat_id=self.chat_id,
-            user_id=self.user.id,
+            user_id=self.user.user_id,
         )
 
 

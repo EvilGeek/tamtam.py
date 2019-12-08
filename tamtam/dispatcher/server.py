@@ -4,7 +4,7 @@ import ipaddress
 
 from aiohttp import web
 
-from tamtam.types.updates import Update
+from ..types.updates import Update
 
 logger = logging.getLogger("tamtam:server")
 
