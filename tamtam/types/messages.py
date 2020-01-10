@@ -126,3 +126,25 @@ class EditMessageConfig(BaseModel):
     count: int = None
     """..."""
 
+
+class ConstructorRequest(BaseModel):
+    messages: typing.Optional[typing.List[NewMessage]] = None
+    """Array of prepared messages. This messages will be sent as user taps on "Send" button"""
+
+    allow_user_input: typing.Optional[bool] = None
+    """If True user can send any input manually. Otherwise, only keyboard will be shown"""
+
+    hint: typing.Optional[str] = None
+    """Hint to user. Will be shown on top of keyboard"""
+
+    data: typing.Optional[str] = None
+    """In this property you can store any additional data up to 8KB.
+    We send this data back to bot within the next construction request.
+    It is handy to store here any state of construction session
+    string <= 8192 characters"""
+
+    keyboard: typing.Optional[typing.Dict[str, typing.List[typing.List[typing.Dict[str, str]]]]] = None
+    """Keyboard to show to user in constructor mode"""
+
+    placeholder: typing.Optional[str] = None
+    """Text to show over the text field"""

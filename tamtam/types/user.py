@@ -69,3 +69,6 @@ class BotInfoSetter(BaseModel):
     async def set(self):
         bot_ = bot.Bot.current(False)
         return await bot_.set_me(self)
+
+    def __await__(self):
+        return self.set().__await__()

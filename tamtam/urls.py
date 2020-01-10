@@ -36,6 +36,9 @@ class Urls:
     answers: URL = base.with_path("answers")
     """base_endpoint/answers"""
 
+    construct_message: URL = answers.with_path("constructor")
+    """base_endpoint/answers/constructor"""
+
     updates: URL = base.with_path("updates")
     """base_endpoint/updates"""
 

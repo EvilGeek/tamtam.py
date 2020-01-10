@@ -31,8 +31,8 @@
         info = await types.BotInfoSetter(
             name="MyBotsName",
             description="smth...",
-        ).call()
-        ...
+        )
+        print(info)
 
     run_async(func())
 
@@ -121,14 +121,13 @@ Think of `ButtonsArray` as an abstraction from `list[list[button]]`.
 
 .. code-block:: python
 
-    from tamtam.types import
+    from tamtam.types import ButtonsArray, CallbackButton, InlineKeyboardAttachment
 
-    # create instance of ButtonsArray
     array = ButtonsArray()
     row, index = array.add_row(1)  # pass None for dynamic row
     row.add(CallbackButton("text", "payload", "negative"))
     row2, index2 = array.add_row(1)
-    # well, heck I don't actually need second row
+
     array.delete_row(index2)
 
     # further actions, e.g send message
@@ -150,7 +149,6 @@ If your bot using tamtam.py, let me know!
 Some advices from author
 =========================
 
-- Don't use webhooks. tamtam.py provides fantastically easy-to-use webhooks with no additional headaches, but also provides polling. You can use webhooks if you have special-cases. Cases like when you want to server multiple bots and etc. But for single bot(even high-loaded) you can use polling
-- Avoid using low-level methods. If you are not super-smart and care about consequences DO NOT use low-level methods. tamtam.py provides pretty enough user-friendly functions
-- Don't use shitty libraries written with no love
-- async/await syntax is easy. Asynchronous python won't bite you(if you code correctly)
+- Try to avoid using webhooks :) For safety, first of all.
+- Don't use another library-wrapper for tamtam.py.
+- async/await syntax is easy. asyncio does not eat people. Stay modern.

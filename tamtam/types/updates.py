@@ -52,6 +52,17 @@ class UpdatesEnum(MetaEnum):
     """bot_started"""
 
 
+class Constructor(BaseModel):
+    user_id: int
+    """Users identifier"""
+
+    name: str
+    """Users visible name"""
+
+    username: str
+    """Unique public user name. Can be null if user is not accessible or it is not set"""
+
+
 class Message(BaseModel):
     timestamp: int
     """unix-time event occurred"""
@@ -72,6 +83,10 @@ class Message(BaseModel):
     """todo"""
 
     url: str
+
+    constructor: typing.Optional[Constructor] = None
+
+    user_locale: typing.Optional[str] = None
 
     async def respond(
         self,
@@ -100,7 +115,7 @@ class Message(BaseModel):
             chat_id=self.recipient.chat_id,
         )
 
-    async def reply(self, text: str, attachments: list = None, notify: bool = False) -> "Message":
+    async def reply(self, text: str, attachments: typing.Optional[list] = None, notify: bool = False) -> "Message":
         """
         Reply to peer
         :param text: text of message
@@ -150,7 +165,7 @@ class Callback(BaseModel):
     callback_id: str
     """current keyboard identifier"""
 
-    payload: str = None
+    payload: typing.Optional[str] = None
     """button payload"""
 
     user: User
@@ -158,6 +173,8 @@ class Callback(BaseModel):
 
     message: Message = None
     """original message containing inline keyboard"""
+
+    user_locale: typing.Optional[str] = None
 
     async def answer(self, notification: str):
         bot_ = bot.Bot.current()
@@ -175,6 +192,8 @@ class MessageRemoved(BaseModel):
     message_id: str
     """identifier of removed message"""
 
+    user_locale: typing.Optional[str] = None
+
 
 class MessageEdited(BaseModel):
     timestamp: int
@@ -182,6 +201,8 @@ class MessageEdited(BaseModel):
 
     message: Message
     """edited message"""
+
+    user_locale: typing.Optional[str] = None
 
 
 class ChatAnyAction(BaseModel):
@@ -195,9 +216,11 @@ class ChatAnyAction(BaseModel):
     """user experienced action"""
 
     # noqa defined abv
-    inviter_id: int = None
-    admin_id: int = None
-    title: int = None
+    inviter_id: typing.Optional[int] = None
+    admin_id: typing.Optional[int] = None
+    title: typing.Optional[str] = None
+
+    user_locale: typing.Optional[str] = None
 
     async def respond(
         self, text: str, attachments: list = None, link: NewMessageLink = None
@@ -214,30 +237,36 @@ class ChatAnyAction(BaseModel):
 
 
 class BotAdded(ChatAnyAction):
-    ...
+    user_locale: typing.Optional[str] = None
 
 
 class BotRemoved(ChatAnyAction):
-    ...
+    user_locale: typing.Optional[str] = None
 
 
 class BotStarted(ChatAnyAction):
-    ...
+    payload: typing.Optional[str] = None
+    user_locale: typing.Optional[str] = None
 
 
 class UserAdded(ChatAnyAction):
     inviter_id: int
     """User who added user to chat"""
+    user_locale: typing.Optional[str] = None
 
 
 class UserRemoved(ChatAnyAction):
     admin_id: int
     """Administrator who removed user from chat"""
 
+    user_locale: typing.Optional[str] = None
+
 
 class ChatTitleChanged(ChatAnyAction):
     title: str
     """New title"""
+
+    user_locale: typing.Optional[str] = None
 
 
 class Update:
@@ -257,12 +286,13 @@ class Update:
     def __init__(self, update_type: str, timestamp: int, **body):
         self.type = update_type
         self.timestamp = timestamp
+        self.user_locale: typing.Optional[str] = body.pop("user_locale", None)
 
-        self.body: dict = body
+        self.body = body
 
     def make_update_model(self):
         if self.type in self.conf:
-            model = self.conf[self.type](timestamp=self.timestamp, **self.body)
+            model = self.conf[self.type](timestamp=self.timestamp, user_locale=self.user_locale, **self.body)
             if hasattr(model, "original"):
                 return model.original
             return model

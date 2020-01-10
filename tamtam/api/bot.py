@@ -43,7 +43,7 @@ class Bot(ctx.ContextInstanceMixin):
         """
         timeout = aiohttp.ClientTimeout(total=timeout + 1) if timeout else None
         self.request = Requester(
-            aiohttp.client.ClientSession(timeout=timeout),
+            aiohttp.client.ClientSession(timeout=timeout) or _session,
             default_params={"access_token": token},
         )
 
@@ -236,6 +236,18 @@ class Bot(ctx.ContextInstanceMixin):
             params={"message_id": message_id}
         )
 
+    async def construct_message(
+        self,
+        session_id: str,
+        request: messages.ConstructorRequest
+    ) -> typing.Dict[str, typing.Any]:
+        return await self.request(
+            "POST",
+            self.urls.construct_message,
+            params={"session_id": session_id},
+            json=request.json(),
+        )
+
     async def answer_callback_query(
         self,
         callback_id: str,
@@ -298,7 +310,7 @@ class Bot(ctx.ContextInstanceMixin):
             model=subscription.Subscription,
         )
 
-    async def subscribe(self, onfig: subscription.NewSubscriptionConfig) -> dict:
+    async def subscribe(self, config: subscription.NewSubscriptionConfig) -> dict:
         tt_url = self.urls.subscriptions
         return await self.request.post(tt_url, json=config.json())
 
@@ -316,10 +328,6 @@ class Bot(ctx.ContextInstanceMixin):
             self.urls.get_upload_url,
             params={"type": type_}
         )) or {}).get("url")
-
-    async def upload(self, url: UrlType):
-        # todo :D aiohttp.FormData
-        ...
 
     async def __aenter__(self) -> "Bot":
         return self

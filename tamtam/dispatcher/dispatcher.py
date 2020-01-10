@@ -153,8 +153,8 @@ class Dispatcher(ContextInstanceMixin):
                 events, marker = await self.bot.get_updates(
                     lim, timeout, marker, update_types, skip_updates
                 )
-            except:  # noqa
-                logger.exception("Error while getting new events")
+            except (Exception, ) as err:  # noqa
+                logger.exception(f"Error {err!r} while getting new events")
                 await asyncio.sleep(sleep_on_exc)
                 continue
 
