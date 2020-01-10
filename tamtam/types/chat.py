@@ -37,7 +37,7 @@ class Chat(BaseModel):
     """Identifier of chat owner.
     [Visible only for chat admins]"""
 
-    participants: list = None  # noqa todo
+    participants: list = None
     """Participants in chat with time of last activity. Can be null when you request list of chats.
      [Visible for chat admins only]"""
 
@@ -52,6 +52,12 @@ class Chat(BaseModel):
 
     dialog_with_user: User = None
     """todo"""
+
+    messages_count: int = None
+    """Messages count in chat. Only for group chats and channels. Not available for dialogs"""
+
+    chat_message_id: str = None
+    """Identifier of message that contains chat button initialized chat"""
 
 
 class Chats(BaseModel):
@@ -86,7 +92,7 @@ class Membership(User):
     join_time: int
     """..."""
 
-    permissions: typing.Union[typing.List[str], type(None)]
+    permissions: typing.Optional[typing.List[str]]
     """Items Enum:"read_all_messages" "add_remove_members" "add_admins" "change_chat_info" "pin_message" "write"
        Permissions in chat if member is admin. null otherwise"""
 
@@ -95,10 +101,16 @@ class Members(BaseModel):
     members: typing.List[Membership]
     """..."""
 
-    marker: int
+    marker: typing.Optional[int] = None
+    """..."""
+
+    count: typing.Optional[int] = None
     """..."""
 
 
-# for convenience
 class Admins(Members):
-    ...
+    members: typing.List[Membership]
+    """..."""
+
+    marker: int
+    """..."""

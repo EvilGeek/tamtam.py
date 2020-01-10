@@ -96,7 +96,7 @@ def allow_ip(
         logger.info(f"Added new ip(hosts|host) {ip}")
 
 
-def _setup(dispatcher, app: web.Application, path=None) -> typing.NoReturn:
+def setup(dispatcher, app: web.Application, path=None) -> typing.NoReturn:
     allow_ip(*TAMTAM_NETWORKS)
 
     app["_check_ip"] = _check_ip
@@ -126,7 +126,7 @@ def run_app(
     if not isinstance(app, web.Application):
         app = web.Application()
 
-    _setup(
+    setup(
         dispatcher=dispatcher, app=app, path=path or DEFAULT_TAMTAM_SUBS_WEBHOOK_PATH
     )
 

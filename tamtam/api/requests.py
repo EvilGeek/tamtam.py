@@ -3,14 +3,21 @@ import logging
 
 import aiohttp
 import pydantic
-from yarl import URL, Query
+import yarl
 
 from .exceptions import JsonParsingError, BaseWrapperError
 from ..helpers.ctx import ContextInstanceMixin
 
 logger = logging.getLogger(__name__)
 
-UrlType = typing.Union[str, URL]
+UrlType = typing.Union[str, yarl.URL]
+QueryVariable = typing.Union[str, int]
+Query = typing.Union[
+    None,
+    str,
+    typing.Mapping[str, QueryVariable],
+    typing.Sequence[typing.Tuple[str, QueryVariable]]
+]
 
 
 def is_error(response_json: dict):
