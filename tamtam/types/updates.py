@@ -1,23 +1,12 @@
 """This file contains models with updates.py"""
 import typing
 
-from pydantic import BaseModel
-
-from ..api import bot
-
-from .messages import (
-    Sender,
-    Recipient,
-    MessageLink,
-    MessageItself,
-    NewMessage,
-    NewMessageLink,
-    Stats,
-    LinkTypes,
-)  # NOQA
-from .user import User
-from ..helpers.vars import Var
 from ..helpers.enums import MetaEnum
+from ..helpers.vars import Var
+from .base import BaseModel
+from .messages import (LinkTypes, MessageItself, MessageLink, NewMessage,
+                       NewMessageLink, Recipient, Sender, Stats)
+from .user import User
 
 
 class UpdatesEnum(MetaEnum):
@@ -105,17 +94,19 @@ class Message(BaseModel):
         :param notify:
         :return: Message
         """
+        self.__default_method__ = "send_message"
 
-        bot_ = bot.Bot.current()
-        assert bot_, "Bot was never initialized"
-
-        return await bot_.send_message(
-            NewMessage(text=text, attachments=attachments or [], link=link, notify=notify),
+        return await self.call(
+            NewMessage(
+                text=text, attachments=attachments or [], link=link, notify=notify
+            ),
             user_id=to or self.sender.user_id,
             chat_id=self.recipient.chat_id,
         )
 
-    async def reply(self, text: str, attachments: typing.Optional[list] = None, notify: bool = False) -> "Message":
+    async def reply(
+        self, text: str, attachments: typing.Optional[list] = None, notify: bool = False
+    ) -> "Message":
         """
         Reply to peer
         :param text: text of message
@@ -144,10 +135,8 @@ class Message(BaseModel):
         return await self.respond(comment, attachments, link, to)
 
     async def delete(self):
-        bot_ = bot.Bot.current()
-        assert bot_, "Bot was never initialized"
-
-        return await bot_.delete_message(self.body.mid)
+        self.__default_method__ = "delete_message"
+        return await self.call(self.body.mid)
 
 
 class _MsgUpdate(BaseModel):
@@ -177,12 +166,10 @@ class Callback(BaseModel):
     user_locale: typing.Optional[str] = None
 
     async def answer(self, notification: str):
-        bot_ = bot.Bot.current()
-        assert bot_, "Bot was never initialized"
+        await self.call(self.callback_id, notification=notification)
 
-        await bot_.answer_callback_query(
-            self.callback_id, notification=notification
-        )
+    __default_method__ = "answer_callback_query"
+    __use_custom_call__ = True
 
 
 class MessageRemoved(BaseModel):
@@ -225,15 +212,14 @@ class ChatAnyAction(BaseModel):
     async def respond(
         self, text: str, attachments: list = None, link: NewMessageLink = None
     ):
-
-        bot_ = bot.Bot.current()
-        assert bot_, "Bot was never initialized"
-
-        return await bot_.send_message(
+        return await self.call(
             NewMessage(text=text, attachments=attachments or [], link=link),
             chat_id=self.chat_id,
             user_id=self.user.user_id,
         )
+
+    __default_method__ = "send_message"
+    __use_custom_call__ = True
 
 
 class BotAdded(ChatAnyAction):
@@ -292,11 +278,13 @@ class Update:
 
     def make_update_model(self):
         if self.type in self.conf:
-            model = self.conf[self.type](timestamp=self.timestamp, user_locale=self.user_locale, **self.body)
+            model = self.conf[self.type](
+                timestamp=self.timestamp, user_locale=self.user_locale, **self.body
+            )
             if hasattr(model, "original"):
                 return model.original
             return model
 
-        raise NotImplemented(
+        raise NotImplementedError(
             f"update_type={self.type!s} is not implemented in tamtam.py"
         )

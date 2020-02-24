@@ -1,5 +1,5 @@
-import typing
 import re
+import typing
 
 CallableFilter = typing.Callable[
     [typing.Any], typing.Callable[[typing.Any], typing.Union[None, bool, str]]

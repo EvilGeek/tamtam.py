@@ -10,7 +10,7 @@
     :target: https://www.python.org/
     :alt: tamtam.py-python-version
 
-**💥 TamTam.py is about performance, so it requires ujson for serialization and deserialization, pydantic for models management, aiohttp for web requests**
+**TamTam.py requires ujson, pydantic, aiohttp**
 
 
 ::
@@ -28,7 +28,7 @@
     Bot("put token @PrimeBot gave")
 
     async def func():
-        info = await types.BotInfoSetter(
+        info = await types.SetInfo(
             name="MyBotsName",
             description="smth...",
         )
@@ -121,7 +121,7 @@ Think of `ButtonsArray` as an abstraction from `list[list[button]]`.
 
 .. code-block:: python
 
-    from tamtam.types import ButtonsArray, CallbackButton, InlineKeyboardAttachment
+    from tamtam.buttons import ButtonsArray, CallbackButton, InlineKeyboardAttachment
 
     array = ButtonsArray()
     row, index = array.add_row(1)  # pass None for dynamic row
@@ -149,6 +149,6 @@ If your bot using tamtam.py, let me know!
 Some advices from author
 =========================
 
-- Try to avoid using webhooks :) For safety, first of all.
-- Don't use another library-wrapper for tamtam.py.
+- Try to avoid using webhooks :) For safety.
+- I prohibit using other libraries for tamtam (I checked them all. It's for your sake, python coders are brainless today).
 - async/await syntax is easy. asyncio does not eat people. Stay modern.

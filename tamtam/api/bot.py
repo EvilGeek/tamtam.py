@@ -1,33 +1,20 @@
 import asyncio
-import typing
 import datetime
+import typing
 
 import aiohttp
 import ujson
 
-from .requests import Requester, UrlType
-
-from ..urls import Urls
-from ..types import (
-    user,
-    updates,
-    chat,
-    messages,
-    subscription,
-    chat_enums,
-    uploads_enums,
-)
 from ..helpers import ctx
-
+from ..types import (chat, chat_enums, messages, subscription, updates,
+                     uploads_enums, user)
+from ..urls import Urls
+from .requests import Requester, UrlType
 
 loop = asyncio.get_event_loop()
 
 
-async def _open_file(
-    file: str,
-    mode,
-    event_loop: asyncio.BaseEventLoop = None,
-):
+async def _open_file(file: str, mode: str, event_loop: asyncio.BaseEventLoop = None):
     return await (event_loop or loop).run_in_executor(None, open, file, mode)
 
 
@@ -62,7 +49,7 @@ class Bot(ctx.ContextInstanceMixin):
         """
         return await self.request.get(self.urls.get_me, model=user.User)
 
-    async def set_me(self, info: user.BotInfoSetter):
+    async def set_me(self, info: user.SetInfo):
         """
 
         :param info:
@@ -105,33 +92,29 @@ class Bot(ctx.ContextInstanceMixin):
             model=chat.Chat,
         )
 
-    async def action(self, chat_id: int, action: chat_enums.ChatAction) -> typing.NoReturn:
+    async def action(
+        self, chat_id: int, action: chat_enums.ChatAction
+    ) -> typing.NoReturn:
         if chat_enums.ChatAction.has(action):
             action = action.value
 
         json = ujson.dumps({"action": action})
 
-        await self.request.post(
-            self.urls.send_action(chat_id),
-            json=json,
-        )
+        await self.request.post(self.urls.send_action(chat_id), json=json)
 
     async def get_membership(self, chat_id: int) -> chat.Membership:
         return await self.request.get(
-            self.urls.membership(chat_id, "me"),
-            model=chat.Membership,
+            self.urls.membership(chat_id, "me"), model=chat.Membership
         )
 
     async def leave_chat(self, chat_id: int) -> typing.NoReturn:
         await self.request.post(
-            self.urls.membership(chat_id, "me"),
-            model=chat.Membership,
+            self.urls.membership(chat_id, "me"), model=chat.Membership
         )
 
     async def get_admins(self, chat_id: int) -> chat.Admins:
         return await self.request.get(
-            self.urls.membership(chat_id, "admins"),
-            model=chat.Admins,
+            self.urls.membership(chat_id, "admins"), model=chat.Admins
         )
 
     async def get_members(
@@ -139,25 +122,29 @@ class Bot(ctx.ContextInstanceMixin):
         chat_id: int,
         users_ids: typing.List[int] = None,
         count: int = 20,
-        marker: int = None
+        marker: int = None,
     ) -> chat.Members:
         return await self.request.get(
             self.urls.membership(chat_id, None),
             model=chat.Members,
-            params={"users_ids": ",".join(map(str, users_ids) or ()), "marker": marker, "count": count}
+            params={
+                "users_ids": ",".join(map(str, users_ids) or ()),
+                "marker": marker,
+                "count": count,
+            },
         )
 
-    async def add_members(self, chat_id: int, users_ids: typing.List[int]) -> typing.NoReturn:
+    async def add_members(
+        self, chat_id: int, users_ids: typing.List[int]
+    ) -> typing.NoReturn:
         await self.request.post(
             self.urls.membership(chat_id, "me"),
-            params={"users_ids": ",".join(map(str, users_ids) or ())}
+            params={"users_ids": ",".join(map(str, users_ids) or ())},
         )
 
     async def remove_member(self, chat_id: int, user_id: int):
         await self.request(
-            "DELETE",
-            self.urls.membership(chat_id, None),
-            params={"user_id": user_id},
+            "DELETE", self.urls.membership(chat_id, None), params={"user_id": user_id}
         )
 
     # messages
@@ -213,7 +200,9 @@ class Bot(ctx.ContextInstanceMixin):
             model_from_key="message",
         )
 
-    async def edit_message(self, cfg: messages.EditMessageConfig) -> typing.List[updates.Message]:
+    async def edit_message(
+        self, cfg: messages.EditMessageConfig
+    ) -> typing.List[updates.Message]:
         return await self.request(
             "PUT",
             self.urls.messages,
@@ -231,15 +220,11 @@ class Bot(ctx.ContextInstanceMixin):
 
     async def delete_message(self, message_id: str):
         await self.request(
-            "DELETE",
-            self.urls.messages,
-            params={"message_id": message_id}
+            "DELETE", self.urls.messages, params={"message_id": message_id}
         )
 
     async def construct_message(
-        self,
-        session_id: str,
-        request: messages.ConstructorRequest
+        self, session_id: str, request: messages.ConstructorRequest
     ) -> typing.Dict[str, typing.Any]:
         return await self.request(
             "POST",
@@ -265,9 +250,7 @@ class Bot(ctx.ContextInstanceMixin):
         json = ujson.dumps(json)
 
         await self.request.post(
-            self.urls.answers,
-            params={"callback_id": callback_id},
-            json=json,
+            self.urls.answers, params={"callback_id": callback_id}, json=json
         )
 
     async def get_updates(
@@ -321,13 +304,13 @@ class Bot(ctx.ContextInstanceMixin):
     async def make_attachments(
         self, *files: typing.Tuple[str, typing.Tuple[str, typing.Union[bytes, str]]]
     ) -> typing.List[int]:
-        raise NotImplemented()
+        raise NotImplementedError()
 
     async def get_upload_url(self, type_: uploads_enums.UploadTypes) -> str:
-        return ((await self.request.post(
-            self.urls.get_upload_url,
-            params={"type": type_}
-        )) or {}).get("url")
+        return (
+            (await self.request.post(self.urls.get_upload_url, params={"type": type_}))
+            or {}
+        ).get("url")
 
     async def __aenter__(self) -> "Bot":
         return self

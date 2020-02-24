@@ -1,13 +1,13 @@
 import asyncio
-import typing
-import logging
 import inspect
+import logging
+import typing
+from functools import wraps
 
+from ..api.bot import Bot
 from ..helpers.ctx import ContextInstanceMixin
 from ..helpers.vars import Var
-from ..types.updates import UpdatesEnum, Update, ChatAnyAction
-from ..api.bot import Bot
-
+from ..types.updates import ChatAnyAction, Update, UpdatesEnum
 from .event_manager import ChatEvent
 from .filters import MessageFilters
 from .server import run_app
@@ -24,6 +24,9 @@ CHAT_ANY_ACTION = Var()
 class Handler:
     def __init__(self):
         self.stack = []
+        self.cache = {}
+        self.max_cache_size = 16384  # 128 ^ 2
+        self.use_cache = True
 
     def register(self, handler: typing.Callable[[Update], typing.NoReturn], *filters):
         """
@@ -42,6 +45,37 @@ class Handler:
 
         self.stack.append((handler, sync_filters, async_filters))
 
+    async def run_filters(
+        self,
+        update: Update,
+        filters: typing.List[typing.Callable],
+        *,
+        is_async: bool = False,
+    ):
+        if self.use_cache:
+            if self.cache.__sizeof__() > self.max_cache_size:
+                self.cache = {}
+
+            cache = self.cache
+
+            for fl in filters:
+                if fl not in cache:
+                    if is_async:
+                        cache[fl] = await fl(update)
+                    else:
+                        cache[fl] = fl(update)
+                if not cache[fl]:
+                    break
+            else:
+                return True
+            return False
+
+        else:
+            if is_async:
+                return all(await fl(update) for fl in filters)
+            else:
+                return all(fl(update) for fl in filters)
+
     async def notify(self, update):
         """
 
@@ -51,15 +85,18 @@ class Handler:
 
         for handler, filters, coro_filters in self.stack or ():
             if coro_filters and filters:
-                if all(await cfl(update) for cfl in coro_filters) and all(
-                    fl(update) for fl in filters
-                ):
+                if not await self.run_filters(
+                    update, filters
+                ) or not await self.run_filters(update, coro_filters, is_async=True):
+                    break
+                else:
                     return loop.create_task(handler(update))
+
             elif coro_filters:
-                if all(await cfl(update) for cfl in coro_filters):
+                if await self.run_filters(update, coro_filters, is_async=True):
                     return loop.create_task(handler(update))
             elif filters:
-                if all(fl(update) for fl in filters):
+                if await self.run_filters(update, filters):
                     return loop.create_task(handler(update))
             else:
                 return loop.create_task(handler(update))
@@ -153,7 +190,7 @@ class Dispatcher(ContextInstanceMixin):
                 events, marker = await self.bot.get_updates(
                     lim, timeout, marker, update_types, skip_updates
                 )
-            except (Exception, ) as err:  # noqa
+            except (Exception,) as err:  # noqa
                 logger.exception(f"Error {err!r} while getting new events")
                 await asyncio.sleep(sleep_on_exc)
                 continue
@@ -187,6 +224,7 @@ class Dispatcher(ContextInstanceMixin):
         self.__handlers[update_type].register(handler, *fls)
 
     def message_handler(self, *filters):
+        @wraps
         def decor(handler):
             self.register_new_handler(handler, UpdatesEnum.message_created, *filters)
             return handler
@@ -194,6 +232,7 @@ class Dispatcher(ContextInstanceMixin):
         return decor
 
     def bot_started(self, *filters):
+        @wraps
         def decor(handler):
             self.register_new_handler(handler, UpdatesEnum.bot_started, *filters)
             return handler
@@ -201,6 +240,7 @@ class Dispatcher(ContextInstanceMixin):
         return decor
 
     def raw_handler(self):
+        @wraps
         def decor(handler):
             self.register_new_handler(handler, RAW)
             return handler

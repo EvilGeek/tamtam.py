@@ -1,9 +1,9 @@
+import datetime
 import typing
 
-from pydantic import BaseModel
-
+from .base import BaseModel
+from .chat_enums import ChatAction, ChatStatus, ChatType
 from .user import User
-from .chat_enums import ChatStatus, ChatType
 
 
 class Icon(BaseModel):
@@ -58,6 +58,60 @@ class Chat(BaseModel):
 
     chat_message_id: str = None
     """Identifier of message that contains chat button initialized chat"""
+
+    async def get_members(
+        self, users_ids: typing.List[int] = None, count: int = 20, marker: int = None
+    ):
+        self.__default_method__ = "get_members"
+        return await self.call(
+            self.chat_id, users_ids=users_ids, count=count, marker=marker
+        )
+
+    async def get_admins(self):
+        self.__default_method__ = "get_admins"
+        return await self.call(self.chat_id)
+
+    async def leave(self):
+        self.__default_method__ = "leave_chat"
+        return await self.call(self.chat_id)
+
+    async def membership(self):
+        self.__default_method__ = "get_membership"
+        return await self.call(self.chat_id)
+
+    async def action(self, action: ChatAction):
+        self.__default_method__ = "action"
+        return await self.call(self.chat_id, action=action)
+
+    async def add_members(self, used_ids: typing.List[int]):
+        self.__default_method__ = "add_members"
+        return await self.call(self.chat_id, used_ids)
+
+    async def remove_member(self, user_id: int):
+        self.__default_method__ = "remove_member"
+        return await self.call(self.chat_id, user_id)
+
+    async def get_messages(
+        self,
+        messages_ids: typing.Optional[typing.List[int]] = None,
+        from_date: typing.Optional[datetime.datetime] = None,
+        to_date: typing.Optional[datetime.datetime] = None,
+        lim: int = None,
+    ):
+        self.__default_method__ = "get_messages"
+        return await self.call(
+            self.chat_id,
+            messages_ids=messages_ids,
+            from_date=from_date,
+            to_date=to_date,
+            lim=lim,
+        )
+
+    async def edit(self, edit_chat: "EditChatInfo"):
+        self.__default_method__ = "edit_chat"
+        return await self.call(self.chat_id, edit_chat)
+
+    __use_custom_call__ = True
 
 
 class Chats(BaseModel):

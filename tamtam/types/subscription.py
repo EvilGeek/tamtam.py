@@ -1,8 +1,7 @@
 import typing
 
-from pydantic import BaseModel
-
 from ..api import __wrapping_api_version__
+from .base import BaseModel
 
 
 class NewSubscriptionConfig(BaseModel):
@@ -14,6 +13,8 @@ class NewSubscriptionConfig(BaseModel):
 
     version: str = __wrapping_api_version__
     """Version of API. Affects model representation"""
+
+    __default_method__ = "subscribe"
 
 
 class Subscription(BaseModel):
