@@ -1,6 +1,6 @@
-import typing
-import logging
 import ipaddress
+import logging
+import typing
 
 from aiohttp import web
 
@@ -18,7 +18,7 @@ TAMTAM_NETWORKS = [
     ipaddress.IPv4Network("185.16.150.192/30"),
 ]
 
-TAMTAM_ALLOWED_PORTS = (80, 8080, 443, 8443, *range(16384, 32383 + 1))
+TAMTAM_ALLOWED_PORTS = {80, 8080, 443, 8443, *range(16384, 32383 + 1)}
 DEFAULT_TAMTAM_SUBS_PORT = 8484
 
 allowed_ips: typing.Set[
@@ -126,9 +126,7 @@ def run_app(
     if not isinstance(app, web.Application):
         app = web.Application()
 
-    setup(
-        dispatcher=dispatcher, app=app, path=path or DEFAULT_TAMTAM_SUBS_WEBHOOK_PATH
-    )
+    setup(dispatcher=dispatcher, app=app, path=path or DEFAULT_TAMTAM_SUBS_WEBHOOK_PATH)
 
     web.run_app(
         app=app, host=host or "localhost", port=port or DEFAULT_TAMTAM_SUBS_PORT

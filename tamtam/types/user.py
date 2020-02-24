@@ -2,9 +2,7 @@
 
 import typing
 
-from pydantic import BaseModel
-
-from ..api import bot
+from .base import BaseModel
 
 
 class BotCommand(BaseModel):
@@ -49,7 +47,7 @@ class User(BaseModel):
     """<= 16000 characters Bot description"""
 
 
-class BotInfoSetter(BaseModel):
+class SetInfo(BaseModel):
     name: str = None
     """name string optional Users visible name"""
 
@@ -66,9 +64,4 @@ class BotInfoSetter(BaseModel):
     photo: str = None
     """todo"""
 
-    async def set(self):
-        bot_ = bot.Bot.current(False)
-        return await bot_.set_me(self)
-
-    def __await__(self):
-        return self.set().__await__()
+    __default_method__ = "set_me"

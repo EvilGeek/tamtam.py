@@ -1,6 +1,5 @@
-import typing
-
 import contextvars
+import typing
 
 Type = typing.TypeVar("Type")
 
@@ -11,7 +10,7 @@ class ContextInstanceMixin:
         return cls
 
     @classmethod
-    def current(cls: typing.Type[Type], no_error=True) -> "Type":
+    def current(cls: typing.Type[Type], no_error=True):
         if no_error:
             return cls.__ctx_var.get(None)
         return cls.__ctx_var.get()

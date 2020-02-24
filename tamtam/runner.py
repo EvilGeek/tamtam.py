@@ -1,5 +1,5 @@
-import typing
 import asyncio
+import typing
 
 from aiohttp import client_exceptions
 

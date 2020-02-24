@@ -1,27 +1,18 @@
 """This file contains message-related models"""
 import typing
 
-from pydantic import BaseModel
-
-from .messages_enums import LinkTypes
+from .attachments import (AudioAttachment, FileAttachment, ImageAttachment,
+                          LocationAttachment, StickerAttachment,
+                          VideoAttachment)
+from .base import BaseModel
 from .chat import ChatType
-from .attachments import (
-    VideoAttachment,
-    AudioAttachment,
-    FileAttachment,
-    ImageAttachment,
-    InlineKeyboardAttachment,
-    LocationAttachment,
-    StickerAttachment
-)
-
+from .messages_enums import LinkTypes
 
 AnyAttachment = typing.Union[
     VideoAttachment,
     AudioAttachment,
     FileAttachment,
     ImageAttachment,
-    InlineKeyboardAttachment,
     LocationAttachment,
     StickerAttachment,
 ]
@@ -90,6 +81,7 @@ class NewMessage(BaseModel):
         self, text: str, attachments: list, link: NewMessageLink, notify: bool = False
     ):
         super().__init__(**locals())
+
     """purpose of adding __init__ - make pycharm more helpful"""
 
     text: str = None
@@ -143,7 +135,9 @@ class ConstructorRequest(BaseModel):
     It is handy to store here any state of construction session
     string <= 8192 characters"""
 
-    keyboard: typing.Optional[typing.Dict[str, typing.List[typing.List[typing.Dict[str, str]]]]] = None
+    keyboard: typing.Optional[
+        typing.Dict[str, typing.List[typing.List[typing.Dict[str, str]]]]
+    ] = None
     """Keyboard to show to user in constructor mode"""
 
     placeholder: typing.Optional[str] = None

@@ -3,6 +3,8 @@ import re
 
 from setuptools import find_packages, setup
 
+INSTALL_REQUIRES = ["aiohttp>=3.5.4,<4.0", "pydantic>=0.30,<1.0", "ujson>=1.35,<2.0"]
+
 WORK_DIR = pathlib.Path(__file__).parent
 
 code = (WORK_DIR / "tamtam" / "__init__.py").read_text("utf-8")
@@ -15,20 +17,6 @@ except IndexError:
 
 with open("readme.rst", "r", encoding="utf-8") as f:
     description = f.read()
-
-
-def get_requirements():
-    """
-    Read requirements from 'requirements txt'
-    :return: requirements
-    :rtype: list
-    """
-
-    return [
-        "aiohttp>=3.5.4,<4.0",
-        "pydantic>=0.30,<1.0",
-        "ujson>=1.35,<2.0",
-    ]
 
 
 setup(
@@ -48,8 +36,7 @@ setup(
         "Intended Audience :: Developers",
         "Programming Language :: Python :: 3.7",
     ],
-    install_requires=get_requirements(),
-    package_data={"": ["requirements.txt"]},
+    install_requires=INSTALL_REQUIRES,
     include_package_data=False,
     keywords="dev.tamtam.chat api asynchronous wrapper",
 )

@@ -1,31 +1,11 @@
-from .messages import NewMessage, NewMessageLink, MessageLink, MessageItself
-from .chat import Chat, ChatType, ChatStatus, Chats
-from .user import BotPhotos, BotInfoSetter, BotCommand, User
-from .updates import (
-    Message,
-    Callback,
-    BotStarted,
-    BotAdded,
-    BotRemoved,
-    MessageRemoved,
-    MessageEdited,
-    UserAdded,
-    UserRemoved,
-    ChatAnyAction,
-    ChatTitleChanged,
-)
+from .attachments import (AudioAttachment, CallbackButton, FileAttachment,
+                          ImageAttachment, LinkButton, LocationAttachment,
+                          RequestContactButton, RequestLocationButton,
+                          StickerAttachment, VideoAttachment)
+from .chat import Chat, Chats, ChatStatus, ChatType
+from .messages import MessageItself, MessageLink, NewMessage, NewMessageLink
 from .subscription import NewSubscriptionConfig
-from .attachments import (
-    VideoAttachment,
-    AudioAttachment,
-    FileAttachment,
-    ImageAttachment,
-    InlineKeyboardAttachment,
-    LocationAttachment,
-    StickerAttachment,
-    ButtonsArray,
-    CallbackButton,
-    LinkButton,
-    RequestContactButton,
-    RequestLocationButton,
-)
+from .updates import (BotAdded, BotRemoved, BotStarted, Callback,
+                      ChatAnyAction, ChatTitleChanged, Message, MessageEdited,
+                      MessageRemoved, UserAdded, UserRemoved)
+from .user import BotCommand, BotPhotos, SetInfo, User

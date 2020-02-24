@@ -1,12 +1,12 @@
-import typing
 import logging
+import typing
 
 import aiohttp
 import pydantic
 import yarl
 
-from .exceptions import JsonParsingError, BaseWrapperError
 from ..helpers.ctx import ContextInstanceMixin
+from .exceptions import BaseWrapperError, JsonParsingError, tt_explanation
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +16,7 @@ Query = typing.Union[
     None,
     str,
     typing.Mapping[str, QueryVariable],
-    typing.Sequence[typing.Tuple[str, QueryVariable]]
+    typing.Sequence[typing.Tuple[str, QueryVariable]],
 ]
 
 
@@ -39,7 +39,7 @@ def params_filter(dictionary: Query):
 
 class Requester(ContextInstanceMixin):
     def __init__(self, session: aiohttp.ClientSession, default_params: dict = None):
-        self._session = session
+        self.session = session
         self.params = params_filter(default_params or {})
 
     async def __call__(
@@ -53,12 +53,12 @@ class Requester(ContextInstanceMixin):
         models_in_list: bool = None,
         model_from_key: str = None,
         extra_key: str = None,
-        **aiohttp_request_kwargs
+        **aiohttp_request_kwargs,
     ):
         if "data" in aiohttp_request_kwargs:
             json = aiohttp_request_kwargs.pop("data")
 
-        async with self._session.request(
+        async with self.session.request(
             http_method,
             url.__str__(),
             params={**self.params, **params_filter(params)},
@@ -66,11 +66,12 @@ class Requester(ContextInstanceMixin):
             **aiohttp_request_kwargs,
         ) as response:
 
+            tt_exp = tt_explanation.get(response.status)
             try:
                 response_json = await response.json()
                 logger.info(
                     f"Sent [{http_method}] to {url!s} [model: {model!r}|data: {json!s}]\t"
-                    f"Got  {response_json}"
+                    f"Got  {response_json} | exp: {tt_exp!s}"
                 )
 
             except ValueError as exc:
@@ -79,7 +80,7 @@ class Requester(ContextInstanceMixin):
 
             if is_error(response_json):
                 logger.error(response_json)
-                raise BaseWrapperError(response_json)
+                raise BaseWrapperError(response_json, tt_exp or "unknown")
 
             if model:
                 try:
@@ -113,4 +114,4 @@ class Requester(ContextInstanceMixin):
         return await self("POST", url, params=params, json=json, **kwargs)
 
     async def close(self):
-        await self._session.close()
+        await self.session.close()
