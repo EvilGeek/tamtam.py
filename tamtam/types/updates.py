@@ -1,5 +1,7 @@
 """This file contains models with updates.py"""
 import typing
+from typing import Optional, Union
+
 
 from ..helpers.enums import MetaEnum
 from ..helpers.vars import Var
