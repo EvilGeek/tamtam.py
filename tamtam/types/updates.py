@@ -71,7 +71,7 @@ class Message(BaseModel):
     stat: Stats = None
     """todo"""
 
-    # url: str
+    url: Optional[str] = None
 
     constructor: typing.Optional[Constructor] = None
 
